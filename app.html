@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comunidade - Grupos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #0d1117;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #161b22;
+            border-bottom: 2px solid #30363d;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-left img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #30363d; }
+        .header-left .info h2 { font-size: 16px; }
+        .header-left .info span { font-size: 12px; color: #3fb950; }
+        .header-btn { padding: 8px 12px; background: transparent; border: none; color: #8b949e; cursor: pointer; font-size: 18px; border-radius: 8px; }
+        .header-btn:hover { background: #21262d; color: #e6edf3; }
+        .search { padding: 8px 16px; background: #161b22; border-bottom: 1px solid #30363d; }
+        .search input { width: 100%; padding: 10px 16px; background: #0d1117; border: 2px solid #30363d; border-radius: 24px; color: #e6edf3; font-size: 14px; outline: none; }
+        .search input:focus { border-color: #58a6ff; }
+        .quick-actions { display: flex; gap: 8px; padding: 8px 16px; background: #161b22; border-bottom: 1px solid #30363d; }
+        .quick-btn { flex: 1; padding: 8px; background: #21262d; border: 1px solid #30363d; border-radius: 10px; color: #e6edf3; cursor: pointer; font-size: 12px; font-weight: 500; text-align: center; }
+        .quick-btn:hover { background: #30363d; }
+        .quick-btn.primary { background: #1f6feb; border-color: #1f6feb; }
+        .quick-btn.primary:hover { background: #388bfd; }
+        .grupos { flex: 1; overflow-y: auto; padding: 4px 0; }
+        .section-title { font-size: 11px; text-transform: uppercase; color: #8b949e; padding: 12px 16px 6px 16px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .section-title .count { background: #21262d; padding: 2px 10px; border-radius: 12px; font-size: 10px; }
+        .grupo-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; border-left: 3px solid transparent; }
+        .grupo-item:hover { background: #21262d; }
+        .grupo-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .grupo-item .info { flex: 1; }
+        .grupo-item .info .nome { font-size: 15px; font-weight: 500; }
+        .grupo-item .info .detalhes { font-size: 12px; color: #8b949e; }
+        .grupo-item .badge { font-size: 11px; padding: 2px 10px; background: #21262d; border-radius: 12px; color: #8b949e; }
+        .grupo-item .admin-badge { font-size: 14px; }
+        .empty-state { padding: 20px; text-align: center; color: #8b949e; }
+        .empty-state .icon { font-size: 32px; display: block; margin-bottom: 8px; }
+        .empty-state h4 { color: #e6edf3; margin-bottom: 4px; }
+        .empty-state p { font-size: 13px; }
+        .modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); display: none;
+            align-items: center; justify-content: center; z-index: 1000; padding: 16px;
+        }
+        .modal-content {
+            background: #161b22; padding: 24px; border-radius: 20px;
+            max-width: 400px; width: 100%; border: 1px solid #30363d;
+        }
+        .modal-content h3 { margin-bottom: 16px; }
+        .modal-content input { width: 100%; padding: 10px 14px; background: #0d1117; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 14px; margin-bottom: 12px; outline: none; }
+        .modal-content input:focus { border-color: #58a6ff; }
+        .modal-content .btn-modal { width: 100%; padding: 12px; background: #238636; border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; }
+        .modal-content .btn-modal:hover { background: #2ea043; }
+        .modal-content .btn-modal-cancel { background: #21262d; margin-top: 8px; }
+        .modal-content .btn-modal-cancel:hover { background: #30363d; }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            padding: 12px 24px; background: #161b22; border: 1px solid #30363d;
+            border-radius: 12px; color: #e6edf3; font-size: 14px; z-index: 999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6); animation: toastIn 0.4s ease;
+            display: none; max-width: 90%;
+        }
+        .toast.show { display: block; }
+        .toast.success { border-color: #238636; }
+        .toast.error { border-color: #da3633; }
+        .toast.info { border-color: #58a6ff; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @media (max-width: 480px) {
+            .grupo-item img { width: 36px; height: 36px; }
+            .header-left img { width: 32px; height: 32px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="appPage">
+        <div class="header">
+            <div class="header-left">
+                <img id="userAvatar" src="https://via.placeholder.com/40" alt="avatar">
+                <div class="info">
+                    <h2 id="userName">Carregando...</h2>
+                    <span>🟢 Online</span>
+                </div>
+            </div>
+            <div>
+                <button class="header-btn" onclick="abrirAdmin()" id="btnAdmin" style="display:none;">👑</button>
+                <button class="header-btn" onclick="sair()">🚪</button>
+            </div>
+        </div>
+
+        <div class="search">
+            <input type="text" id="searchInput" placeholder="🔍 Pesquisar grupos..." oninput="filtrarGrupos(this.value)">
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-btn primary" onclick="criarGrupo()">➕ Novo Grupo</button>
+            <button class="quick-btn" onclick="carregarGrupos()">🔄 Atualizar</button>
+        </div>
+
+        <div class="grupos" id="gruposList">
+            <div class="section-title">💬 Meus Grupos <span class="count" id="meusCount">0</span></div>
+            <div id="meusGrupos"></div>
+            <div class="section-title">🌐 Grupos Públicos <span class="count" id="publicosCount">0</span></div>
+            <div id="publicosGrupos"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="criarModal">
+        <div class="modal-content">
+            <h3>📝 Criar Grupo</h3>
+            <input type="text" id="nomeGrupo" placeholder="Nome do grupo">
+            <button class="btn-modal" onclick="confirmarCriarGrupo()">Criar</button>
+            <button class="btn-modal btn-modal-cancel" onclick="fecharModal('criarModal')">Cancelar</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let usuarioAtual = null;
+
+        function mostrarToast(msg, tipo = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast show ${tipo}`;
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function fecharModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function abrirModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function verificarLogin() {
+            const usuarioSalvo = localStorage.getItem('usuario');
+            if (!usuarioSalvo) {
+                window.location.href = 'index.html';
+                return;
+            }
+            try {
+                usuarioAtual = JSON.parse(usuarioSalvo);
+                document.getElementById('userName').textContent = usuarioAtual.nome;
+                document.getElementById('userAvatar').src = usuarioAtual.foto || 'https://via.placeholder.com/40';
+                if (usuarioAtual.is_admin) {
+                    document.getElementById('btnAdmin').style.display = 'block';
+                }
+            } catch (e) {
+                localStorage.removeItem('usuario');
+                window.location.href = 'index.html';
+            }
+        }
+
+        async function carregarGrupos() {
+            if (!usuarioAtual) return;
+
+            try {
+                const meus = await getMeusGrupos(usuarioAtual.id);
+
+                const containerMeus = document.getElementById('meusGrupos');
+                document.getElementById('meusCount').textContent = meus.length;
+
+                if (meus.length === 0) {
+                    containerMeus.innerHTML = `
+                        <div class="empty-state">
+                            <span class="icon">📭</span>
+                            <h4>Nenhum grupo</h4>
+                            <p>Entre em um grupo público ou crie um novo</p>
+                        </div>
+                    `;
+                } else {
+                    containerMeus.innerHTML = meus.map(g => `
+                        <div class="grupo-item" onclick="entrarGrupo(${g.id}, '${g.nome}')">
+                            <img src="${g.foto || 'https://via.placeholder.com/44'}" alt="${g.nome}">
+                            <div class="info">
+                                <div class="nome">${g.nome}</div>
+                                <div class="detalhes">${g.membros || 0} membros</div>
+                            </div>
+                            ${g.admin_id === usuarioAtual.id ? '<span class="admin-badge">👑</span>' : ''}
+                        </div>
+                    `).join('');
+                }
+
+                const publicos = await getGruposPublicos(usuarioAtual.id);
+
+                const containerPublicos = document.getElementById('publicosGrupos');
+                document.getElementById('publicosCount').textContent = publicos.length;
+
+                if (publicos.length === 0) {
+                    containerPublicos.innerHTML = `
+                        <div class="empty-state">
+                            <span class="icon">🌐</span>
+                            <h4>Nenhum grupo público</h4>
+                            <p>Peça ao administrador para criar um</p>
+                        </div>
+                    `;
+                } else {
+                    containerPublicos.innerHTML = publicos.map(g => `
+                        <div class="grupo-item" onclick="entrarGrupoPublico(${g.id})">
+                            <img src="${g.foto || 'https://via.placeholder.com/44'}" alt="${g.nome}">
+                            <div class="info">
+                                <div class="nome">${g.nome}</div>
+                                <div class="detalhes">${g.membros || 0} membros</div>
+                            </div>
+                            <span class="badge">Entrar</span>
+                        </div>
+                    `).join('');
+                }
+
+            } catch (e) {
+                console.error('❌ Erro ao carregar grupos:', e);
+                mostrarToast('❌ Erro ao carregar grupos', 'error');
+            }
+        }
+
+        function filtrarGrupos(query) {
+            const items = document.querySelectorAll('.grupo-item');
+            const q = query.toLowerCase().trim();
+            items.forEach(item => {
+                const nome = item.querySelector('.nome')?.textContent?.toLowerCase() || '';
+                item.style.display = q === '' || nome.includes(q) ? 'flex' : 'none';
+            });
+        }
+
+        function entrarGrupo(id, nome) {
+            localStorage.setItem('grupo_atual', JSON.stringify({ id, nome }));
+            window.location.href = `grupo.html?id=${id}`;
+        }
+
+        async function entrarGrupoPublico(grupoId) {
+            try {
+                const success = await entrarGrupo(grupoId, usuarioAtual.id);
+                if (success) {
+                    mostrarToast('✅ Entrou no grupo!', 'success');
+                    carregarGrupos();
+                } else {
+                    mostrarToast('❌ Já é membro deste grupo', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao entrar no grupo', 'error');
+            }
+        }
+
+        function criarGrupo() {
+            if (!usuarioAtual || !usuarioAtual.is_admin) {
+                mostrarToast('⚠️ Apenas administradores podem criar grupos', 'error');
+                return;
+            }
+            abrirModal('criarModal');
+            document.getElementById('nomeGrupo').value = '';
+            setTimeout(() => document.getElementById('nomeGrupo').focus(), 100);
+        }
+
+        async function confirmarCriarGrupo() {
+            const nome = document.getElementById('nomeGrupo').value.trim();
+
+            if (!nome) {
+                mostrarToast('⚠️ Digite um nome para o grupo', 'error');
+                return;
+            }
+
+            try {
+                const grupo = await criarGrupo(nome, usuarioAtual.id);
+                if (grupo) {
+                    fecharModal('criarModal');
+                    mostrarToast('✅ Grupo criado!', 'success');
+                    carregarGrupos();
+                    entrarGrupo(grupo.id, grupo.nome);
+                } else {
+                    mostrarToast('❌ Erro ao criar grupo', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao criar grupo', 'error');
+            }
+        }
+
+        function abrirAdmin() {
+            if (!usuarioAtual || !usuarioAtual.is_admin) {
+                mostrarToast('⚠️ Apenas administradores', 'error');
+                return;
+            }
+
+            const adminMenu = confirm(
+                '👑 PAINEL ADMIN\n\n' +
+                'Clique em OK para Gerenciar Usuários\n' +
+                'Clique em Cancelar para Gerenciar Grupos'
+            );
+
+            if (adminMenu) {
+                adminCarregarUsuarios();
+            } else {
+                adminCarregarGrupos();
+            }
+        }
+
+        async function adminCarregarUsuarios() {
+            try {
+                const usuarios = await getUsuarios();
+                let lista = '👤 USUÁRIOS\n\n';
+                usuarios.forEach(u => {
+                    lista += `${u.id} - ${u.nome} (${u.email})\n`;
+                    lista += `   ${u.is_admin ? '👑 Admin' : u.is_banido ? '🚫 Banido' : '✅ Ativo'}\n\n`;
+                });
+                lista += '\n🔧 Opções:\n';
+                lista += '1. Banir/Desbanir usuário\n';
+                lista += '2. Voltar';
+
+                const opcao = prompt(lista + '\n\nDigite o ID do usuário para banir, ou 0 para voltar:');
+
+                if (opcao && opcao !== '0') {
+                    const id = parseInt(opcao);
+                    if (!isNaN(id)) {
+                        adminBanirUsuario(id);
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao carregar usuários', 'error');
+            }
+        }
+
+        async function adminCarregarGrupos() {
+            try {
+                const grupos = await getGrupos();
+                let lista = '📚 GRUPOS\n\n';
+                grupos.forEach(g => {
+                    lista += `${g.id} - ${g.nome} (${g.membros || 0} membros)\n`;
+                });
+                lista += '\n🔧 Opções:\n';
+                lista += '1. Deletar grupo\n';
+                lista += '2. Adicionar usuário\n';
+                lista += '3. Criar usuário\n';
+                lista += '4. Voltar';
+
+                const opcao = prompt(lista + '\n\nEscolha uma opção:');
+
+                if (opcao === '1') {
+                    const id = prompt('Digite o ID do grupo para deletar:');
+                    if (id) adminDeletarGrupo(parseInt(id));
+                } else if (opcao === '2') {
+                    adminAdicionarUsuario();
+                } else if (opcao === '3') {
+                    adminCriarUsuario();
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao carregar grupos', 'error');
+            }
+        }
+
+        async function adminBanirUsuario(id) {
+            if (!confirm('Banir/Desbanir este usuário?')) return;
+
+            try {
+                const success = await banirUsuario(id);
+                if (success) {
+                    mostrarToast('✅ Status atualizado!', 'success');
+                } else {
+                    mostrarToast('❌ Não pode banir um admin', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao banir', 'error');
+            }
+        }
+
+        async function adminDeletarGrupo(id) {
+            if (!confirm('Deletar este grupo permanentemente?')) return;
+
+            try {
+                const success = await deletarGrupo(id);
+                if (success) {
+                    mostrarToast('✅ Grupo deletado!', 'success');
+                    carregarGrupos();
+                } else {
+                    mostrarToast('❌ Erro ao deletar', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao deletar', 'error');
+            }
+        }
+
+        async function adminAdicionarUsuario() {
+            const grupos = await getGrupos();
+            const usuarios = await getUsuarios();
+
+            let grupoLista = 'GRUPOS:\n';
+            grupos.forEach(g => {
+                grupoLista += `${g.id} - ${g.nome}\n`;
+            });
+
+            const grupoId = prompt(grupoLista + '\nDigite o ID do grupo:');
+            if (!grupoId) return;
+
+            let usuarioLista = 'USUÁRIOS:\n';
+            usuarios.filter(u => !u.is_admin).forEach(u => {
+                usuarioLista += `${u.id} - ${u.nome}\n`;
+            });
+
+            const usuarioId = prompt(usuarioLista + '\nDigite o ID do usuário:');
+            if (!usuarioId) return;
+
+            try {
+                const success = await adicionarUsuarioAoGrupo(parseInt(grupoId), parseInt(usuarioId));
+                if (success) {
+                    mostrarToast('✅ Usuário adicionado!', 'success');
+                    carregarGrupos();
+                } else {
+                    mostrarToast('❌ Usuário já está no grupo', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao adicionar', 'error');
+            }
+        }
+
+        async function adminCriarUsuario() {
+            const nome = prompt('👤 Nome:');
+            if (!nome) return;
+
+            const email = prompt('📧 Email:');
+            if (!email) return;
+
+            const senha = prompt('🔒 Senha:');
+            if (!senha || senha.length < 4) {
+                mostrarToast('⚠️ Senha deve ter pelo menos 4 caracteres', 'error');
+                return;
+            }
+
+            const isAdmin = confirm('👑 Tornar administrador?');
+
+            try {
+                const resultado = await criarUsuario(nome, email, senha, isAdmin);
+                if (resultado && resultado.error) {
+                    mostrarToast('❌ ' + resultado.error, 'error');
+                } else if (resultado) {
+                    mostrarToast('✅ Usuário criado!', 'success');
+                } else {
+                    mostrarToast('❌ Erro ao criar', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                mostrarToast('❌ Erro ao criar', 'error');
+            }
+        }
+
+        function sair() {
+            if (confirm('Deseja sair?')) {
+                localStorage.removeItem('usuario');
+                window.location.href = 'index.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            verificarLogin();
+
+            if (usuarioAtual) {
+                await initDB();
+                await carregarGrupos();
+            }
+
+            console.log('🚀 App carregado!');
+            console.log('👤 Usuário:', usuarioAtual?.nome);
+        });
+
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+    </script>
+
+</body>
+</html>

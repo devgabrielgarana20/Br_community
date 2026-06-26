@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - Comunidade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-box {
+            background: #161b22;
+            padding: 40px 32px;
+            border-radius: 20px;
+            border: 1px solid #30363d;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .auth-box .logo { text-align: center; margin-bottom: 32px; }
+        .auth-box .logo h1 { font-size: 32px; color: #58a6ff; }
+        .auth-box .logo p { color: #8b949e; font-size: 14px; }
+        .auth-box .input-group { margin-bottom: 16px; }
+        .auth-box .input-group label { display: block; color: #8b949e; font-size: 13px; margin-bottom: 6px; }
+        .auth-box .input-group input {
+            width: 100%; padding: 12px 16px; background: #0d1117;
+            border: 2px solid #30363d; border-radius: 12px;
+            color: #e6edf3; font-size: 16px; outline: none;
+        }
+        .auth-box .input-group input:focus { border-color: #58a6ff; }
+        .auth-box .btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #238636, #2ea043);
+            border: none; border-radius: 12px; color: white;
+            font-weight: 700; font-size: 16px; cursor: pointer;
+            margin-top: 8px;
+        }
+        .auth-box .btn:hover { background: #2ea043; }
+        .auth-box .link { color: #58a6ff; cursor: pointer; text-align: center; margin-top: 12px; font-size: 14px; }
+        .auth-box .link:hover { text-decoration: underline; }
+        .auth-box .msg { margin-top: 12px; padding: 10px; border-radius: 10px; font-size: 14px; text-align: center; display: none; }
+        .auth-box .msg.error { background: rgba(248,81,73,0.12); color: #f85149; border: 1px solid rgba(248,81,73,0.2); display: block; }
+        .auth-box .msg.success { background: rgba(63,185,80,0.12); color: #3fb950; border: 1px solid rgba(63,185,80,0.2); display: block; }
+        .auth-box .info { color: #8b949e; text-align: center; font-size: 12px; margin-top: 16px; border-top: 1px solid #21262d; padding-top: 16px; }
+        .auth-box .info span { color: #58a6ff; }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            padding: 12px 24px; background: #161b22; border: 1px solid #30363d;
+            border-radius: 12px; color: #e6edf3; font-size: 14px; z-index: 999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6); animation: toastIn 0.4s ease;
+            display: none; max-width: 90%;
+        }
+        .toast.show { display: block; }
+        .toast.success { border-color: #238636; }
+        .toast.error { border-color: #da3633; }
+        .toast.info { border-color: #58a6ff; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-box" id="loginPage">
+        <div class="logo">
+            <h1>💬 Comunidade</h1>
+            <p>Conecte-se com amigos</p>
+        </div>
+
+        <div id="loginForm">
+            <div class="input-group">
+                <label>📧 Email</label>
+                <input type="email" id="loginEmail" placeholder="seu@email.com" value="admin@admin.com">
+            </div>
+            <div class="input-group">
+                <label>🔒 Senha</label>
+                <input type="password" id="loginSenha" placeholder="••••••••" value="admin123">
+            </div>
+            <button class="btn" onclick="fazerLogin()">🚀 Entrar</button>
+            <div class="link" onclick="mostrarCadastro()">Não tem conta? Cadastre-se</div>
+            <div id="loginMsg" class="msg"></div>
+            <div class="info">🔐 Administrador: <span>admin@admin.com / admin123</span></div>
+        </div>
+
+        <div id="cadastroForm" style="display:none;">
+            <div class="input-group">
+                <label>👤 Nome</label>
+                <input type="text" id="cadNome" placeholder="Seu nome">
+            </div>
+            <div class="input-group">
+                <label>📧 Email</label>
+                <input type="email" id="cadEmail" placeholder="seu@email.com">
+            </div>
+            <div class="input-group">
+                <label>🔒 Senha</label>
+                <input type="password" id="cadSenha" placeholder="••••••••">
+            </div>
+            <button class="btn" onclick="fazerCadastro()">✅ Cadastrar</button>
+            <div class="link" onclick="mostrarLogin()">Já tem conta? Faça login</div>
+            <div id="cadastroMsg" class="msg"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/api.js"></script>
+    <script>
+        function mostrarToast(msg, tipo = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast show ${tipo}`;
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function mostrarLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('cadastroForm').style.display = 'none';
+            document.getElementById('loginMsg').className = 'msg';
+            document.getElementById('loginMsg').textContent = '';
+        }
+
+        function mostrarCadastro() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('cadastroForm').style.display = 'block';
+            document.getElementById('cadastroMsg').className = 'msg';
+            document.getElementById('cadastroMsg').textContent = '';
+        }
+
+        async function fazerLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const senha = document.getElementById('loginSenha').value.trim();
+            const msg = document.getElementById('loginMsg');
+
+            msg.className = 'msg';
+
+            if (!email || !senha) {
+                msg.className = 'msg error';
+                msg.textContent = '⚠️ Preencha todos os campos';
+                return;
+            }
+
+            try {
+                await initDB();
+                const usuarios = await getUsuarios();
+                const usuario = usuarios.find(u => u.email === email);
+
+                if (!usuario) {
+                    msg.className = 'msg error';
+                    msg.textContent = '❌ Email não encontrado';
+                    return;
+                }
+
+                if (usuario.is_banido) {
+                    msg.className = 'msg error';
+                    msg.textContent = '❌ Usuário banido';
+                    return;
+                }
+
+                if (usuario.senha !== senha) {
+                    msg.className = 'msg error';
+                    msg.textContent = '❌ Senha incorreta';
+                    return;
+                }
+
+                localStorage.setItem('usuario', JSON.stringify(usuario));
+
+                msg.className = 'msg success';
+                msg.textContent = '✅ Login realizado!';
+
+                setTimeout(() => {
+                    window.location.href = 'app.html';
+                }, 800);
+
+            } catch (e) {
+                console.error(e);
+                msg.className = 'msg error';
+                msg.textContent = '❌ Erro ao fazer login';
+            }
+        }
+
+        async function fazerCadastro() {
+            const nome = document.getElementById('cadNome').value.trim();
+            const email = document.getElementById('cadEmail').value.trim();
+            const senha = document.getElementById('cadSenha').value.trim();
+            const msg = document.getElementById('cadastroMsg');
+
+            msg.className = 'msg';
+
+            if (!nome || !email || !senha) {
+                msg.className = 'msg error';
+                msg.textContent = '⚠️ Preencha todos os campos';
+                return;
+            }
+
+            if (senha.length < 4) {
+                msg.className = 'msg error';
+                msg.textContent = '⚠️ A senha deve ter pelo menos 4 caracteres';
+                return;
+            }
+
+            try {
+                await initDB();
+                const resultado = await criarUsuario(nome, email, senha, false);
+
+                if (resultado && resultado.error) {
+                    msg.className = 'msg error';
+                    msg.textContent = '❌ ' + resultado.error;
+                    return;
+                }
+
+                if (resultado) {
+                    msg.className = 'msg success';
+                    msg.textContent = '✅ Cadastro realizado! Faça login.';
+                    setTimeout(() => {
+                        mostrarLogin();
+                        document.getElementById('loginEmail').value = email;
+                        document.getElementById('loginSenha').value = '';
+                    }, 1500);
+                } else {
+                    msg.className = 'msg error';
+                    msg.textContent = '❌ Erro ao cadastrar';
+                }
+            } catch (e) {
+                console.error(e);
+                msg.className = 'msg error';
+                msg.textContent = '❌ Erro ao cadastrar';
+            }
+        }
+
+        document.getElementById('loginSenha').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') fazerLogin();
+        });
+        document.getElementById('loginEmail').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') fazerLogin();
+        });
+        document.getElementById('cadSenha').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') fazerCadastro();
+        });
+
+        console.log('🔐 Login carregado!');
+    </script>
+
+</body>
+</html>
